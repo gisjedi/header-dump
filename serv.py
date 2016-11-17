@@ -1,20 +1,56 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
+# Reflects the requests from HTTP methods GET, POST, PUT, and DELETE
+# Written by Nathan Hamiel (2010)
 
-import SimpleHTTPServer
-import SocketServer
-import logging
+from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+from optparse import OptionParser
+
 import os
 
-PORT = int(os.getenv('SERVER_PORT'))
 
-class GetHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
-
+class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        logging.error(self.headers)
-        SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
+        request_path = self.path
+
+        print("\n----- Request Start ----->\n")
+        print(request_path)
+        print(self.headers)
+        print("<----- Request End -----\n")
+
+        self.send_response(200)
+
+    def do_POST(self):
+        request_path = self.path
+
+        print("\n----- Request Start ----->\n")
+        print(request_path)
+
+        request_headers = self.headers
+        content_length = request_headers.getheaders('content-length')
+        length = int(content_length[0]) if content_length else 0
+
+        print(request_headers)
+        print(self.rfile.read(length))
+        print("<----- Request End -----\n")
+
+        self.send_response(200)
+
+    do_PUT = do_POST
+    do_DELETE = do_GET
 
 
-Handler = GetHandler
-httpd = SocketServer.TCPServer(("", PORT), Handler)
+def main():
+    port = int(os.getenv('SERVER_PORT'))
+    print('Listening on localhost:%s' % port)
+    server = HTTPServer(('', port), RequestHandler)
+    server.serve_forever()
 
-httpd.serve_forever()
+
+if __name__ == "__main__":
+    parser = OptionParser()
+    parser.usage = ("Creates an http-server that will echo out any GET or POST parameters\n"
+                    "Run:\n\n"
+                    "   reflect")
+    (options, args) = parser.parse_args()
+
+    main()
